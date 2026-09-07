@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/DocuRag.Api/DocuRag.Api.csproj" />
+    <Project Path="src/DocuRag.Core/DocuRag.Core.csproj" />
+    <Project Path="src/DocuRag.Ingestion/DocuRag.Ingestion.csproj" />
+    <Project Path="src/DocuRag.Worker/DocuRag.Worker.csproj" />
+  </Folder>
+</Solution>
