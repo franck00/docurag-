@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: docurag
+metadata:
+  template: docurag@0.1.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  ingestion:
+    project: ./src/DocuRag.Ingestion
+    host: function
+    language: dotnet
+
+# DocuRag.Worker et DocuRag.Api seront ajoutes ici au J8 (Container Apps) et
+# quand leur hote de deploiement sera decide.
