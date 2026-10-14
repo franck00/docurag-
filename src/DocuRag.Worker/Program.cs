@@ -11,6 +11,9 @@ builder.Services.AddServiceBusQueue(builder.Configuration);
 builder.Services.AddDocumentProcessing(builder.Configuration);
 builder.Services.AddHostedService<Worker>();
 
+// Change feed processor (J13) : statistiques d'indexation mises à jour en continu.
+builder.Services.AddHostedService<StatsChangeFeedService>();
+
 // Observabilité (J12) : traces + métriques exportées vers Application Insights.
 if (!string.IsNullOrEmpty(
         Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))

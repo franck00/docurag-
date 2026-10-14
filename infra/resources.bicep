@@ -190,6 +190,21 @@ resource chunksCol 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/container
   }
 }
 
+// Conteneur de baux pour le change feed processor (J13).
+resource leasesCol 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = {
+  parent: cosmosDb
+  name: 'leases'
+  properties: {
+    resource: {
+      id: 'leases'
+      partitionKey: {
+        paths: [ '/id' ]
+        kind: 'Hash'
+      }
+    }
+  }
+}
+
 // --- Azure OpenAI : embeddings + chat ---------------------------------------
 resource openai 'Microsoft.CognitiveServices/accounts@2024-10-01' = {
   name: '${prefix}-oai-${resourceToken}'

@@ -17,4 +17,7 @@ public sealed class CosmosOptions
     public string DocumentsContainer { get; set; } = "documents";
 
     public string ChunksContainer { get; set; } = "chunks";
+
+    /// <summary>Conteneur de baux pour le change feed processor (J13).</summary>
+    public string LeasesContainer { get; set; } = "leases";
 }
