@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Auth : managed identity partout (J11), aucune connection string -->
+    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+    <!-- Cosmos DB for NoSQL + recherche vectorielle -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.46.0" />
+    <!-- Service Bus -->
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
+    <!-- Blob Storage -->
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.23.0" />
+    <!-- Azure OpenAI (embeddings + chat) -->
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <!-- Extraction PDF -->
+    <PackageReference Include="PdfPig" Version="0.1.9" />
+    <!-- Options / DI / logging abstractions -->
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DocuRag.Core\DocuRag.Core.csproj" />
+  </ItemGroup>
+
+</Project>

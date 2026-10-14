@@ -2,7 +2,11 @@
   <Folder Name="/src/">
     <Project Path="src/DocuRag.Api/DocuRag.Api.csproj" />
     <Project Path="src/DocuRag.Core/DocuRag.Core.csproj" />
+    <Project Path="src/DocuRag.Infrastructure/DocuRag.Infrastructure.csproj" />
     <Project Path="src/DocuRag.Ingestion/DocuRag.Ingestion.csproj" />
     <Project Path="src/DocuRag.Worker/DocuRag.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DocuRag.Core.Tests/DocuRag.Core.Tests.csproj" />
   </Folder>
 </Solution>
