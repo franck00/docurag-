@@ -10,10 +10,16 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.9" />
     <!-- Pin transitive Microsoft.OpenApi to a version without GHSA-v5pm-xwqc-g5wc (NU1903) -->
     <PackageReference Include="Microsoft.OpenApi" Version="2.12.2" />
+    <!-- Observabilité (J12) : OpenTelemetry → Azure Monitor -->
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.12.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.12.0" />
+    <PackageReference Include="Azure.Monitor.OpenTelemetry.Exporter" Version="1.7.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\DocuRag.Core\DocuRag.Core.csproj" />
+    <ProjectReference Include="..\DocuRag.Infrastructure\DocuRag.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

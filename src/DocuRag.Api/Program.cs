@@ -1,12 +1,35 @@
+using Azure.Monitor.OpenTelemetry.Exporter;
+using DocuRag.Core.Contracts;
+using DocuRag.Core.Models;
+using DocuRag.Infrastructure.DependencyInjection;
+using DocuRag.Infrastructure.Rag;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
+
+// Recherche vectorielle + génération (Cosmos + Azure OpenAI). Auth managed identity.
+builder.Services.AddRag(builder.Configuration);
+
+// Observabilité (J12).
+if (!string.IsNullOrEmpty(
+        Environment.GetEnvironmentVariable("APPLICATIONINSIGHTS_CONNECTION_STRING")))
+{
+    builder.Services.AddOpenTelemetry()
+        .WithTracing(tracing => tracing
+            .AddSource("DocuRag.Api")
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation())
+        .WithMetrics(metrics => metrics
+            .AddMeter("DocuRag.Api")
+            .AddAspNetCoreInstrumentation())
+        .UseAzureMonitorExporter();
+}
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -14,28 +37,29 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Santé (health check pour Container Apps).
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .WithName("Health");
 
-app.MapGet("/weatherforecast", () =>
+// Liste des documents indexés.
+app.MapGet("/documents", async (IVectorStore store, CancellationToken ct) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var documents = await store.ListDocumentsAsync(ct);
+    return Results.Ok(documents);
 })
-.WithName("GetWeatherForecast");
+.WithName("ListDocuments");
+
+// Question → réponse sourcée.
+app.MapPost("/ask", async (AskRequest request, RagService rag, CancellationToken ct) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Question))
+    {
+        return Results.BadRequest(new { error = "Le champ 'question' est requis." });
+    }
+
+    var response = await rag.AskAsync(request, ct);
+    return Results.Ok(response);
+})
+.WithName("Ask");
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
