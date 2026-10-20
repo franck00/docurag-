@@ -63,3 +63,6 @@ app.MapPost("/ask", async (AskRequest request, RagService rag, CancellationToken
 .WithName("Ask");
 
 app.Run();
+
+// Rend le point d'entrée visible aux tests d'intégration (WebApplicationFactory).
+public partial class Program { }

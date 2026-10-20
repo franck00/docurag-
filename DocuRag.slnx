@@ -7,6 +7,8 @@
     <Project Path="src/DocuRag.Worker/DocuRag.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/DocuRag.Api.Tests/DocuRag.Api.Tests.csproj" />
     <Project Path="tests/DocuRag.Core.Tests/DocuRag.Core.Tests.csproj" />
+    <Project Path="tests/DocuRag.Infrastructure.Tests/DocuRag.Infrastructure.Tests.csproj" />
   </Folder>
 </Solution>
