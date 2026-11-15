@@ -5,4 +5,7 @@
     <Project Path="src/DocuRag.Ingestion/DocuRag.Ingestion.csproj" />
     <Project Path="src/DocuRag.Worker/DocuRag.Worker.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DocuRag.Core.Tests/DocuRag.Core.Tests.csproj" />
+  </Folder>
 </Solution>

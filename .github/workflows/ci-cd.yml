@@ -1,0 +1,101 @@
+name: CI/CD
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build:
+    name: Build & test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore DocuRag.slnx
+
+      - name: Build
+        run: dotnet build DocuRag.slnx --no-restore -c Release
+
+      - name: Test
+        run: dotnet test DocuRag.slnx --no-build -c Release --logger "trx;LogFileName=results.trx" --results-directory TestResults
+
+      - name: No secrets in source
+        run: |
+          if grep -rniE "AccountKey=|SharedAccessKey=" src/ infra/; then
+            echo "::error::Chaîne de connexion avec clé trouvée dans le code"; exit 1
+          fi
+
+      - name: Bicep lint
+        run: az bicep build --file infra/main.bicep --stdout > /dev/null
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: TestResults
+
+  # Déploiement continu : un push sur main redéploie tout (infra + 3 services) avec azd.
+  # Authentification OIDC (fédération GitHub → Entra ID) : aucun secret de service principal dans le repo.
+  # Activé dès que les variables du repo AZURE_CLIENT_ID / AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID existent
+  # (voir docs/deploiement.md, `azd pipeline config` les crée).
+  deploy:
+    name: Deploy (azd)
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AZURE_CLIENT_ID != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    environment: production
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AZURE_PRINCIPAL_TYPE: ServicePrincipal
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - uses: Azure/setup-azd@v2
+
+      - name: az login (OIDC) — utilisé par les hooks azd
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: azd login (OIDC)
+        run: |
+          azd auth login \
+            --client-id "$AZURE_CLIENT_ID" \
+            --federated-credential-provider github \
+            --tenant-id "$AZURE_TENANT_ID"
+
+      - name: Provision
+        run: azd provision --no-prompt
+
+      # Le worker et l'API sont construits dans Azure Container Registry (ACR Tasks, remoteBuild: true),
+      # puis les Container Apps reçoivent la nouvelle image.
+      - name: Deploy
+        run: azd deploy --no-prompt

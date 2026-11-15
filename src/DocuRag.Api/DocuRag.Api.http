@@ -1,6 +1,28 @@
-@DocuRag.Api_HostAddress = http://localhost:5064
+@api = http://localhost:5064
 
-GET {{DocuRag.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+### Question sourcée
+POST {{api}}/ask
+Content-Type: application/json
 
-###
+{
+  "question": "Quelles sont les conditions de validité d'une société commerciale selon l'OHADA ?"
+}
+
+### Question filtrée par type de document (= premier dossier du blob)
+POST {{api}}/ask
+Content-Type: application/json
+
+{
+  "question": "Quel est le délai de dépôt d'une déclaration en douane ?",
+  "docType": "douane",
+  "topK": 5
+}
+
+### Documents indexés
+GET {{api}}/documents
+
+### Statistiques (change feed)
+GET {{api}}/stats
+
+### Messages en dead-letter
+GET {{api}}/admin/dead-letters

@@ -1,0 +1,10 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "DocuRag__Cosmos__Endpoint": "https://<cosmos>.documents.azure.com:443/",
+    "DocuRag__ServiceBus__FullyQualifiedNamespace": "<namespace>.servicebus.windows.net",
+    "DocuRag__Storage__Container": "documents"
+  }
+}
