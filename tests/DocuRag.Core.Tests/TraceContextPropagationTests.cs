@@ -23,11 +23,12 @@ public class TraceContextPropagationTests
 
         var context = TraceContextPropagation.Extract(message.ApplicationProperties.AsReadOnly());
 
-        Assert.NotNull(context);
-        Assert.Equal(activity.TraceId, context.Value.TraceId);
-        Assert.Equal(activity.SpanId, context.Value.SpanId);
-        Assert.Equal("docurag=1", context.Value.TraceState);
-        Assert.True(context.Value.IsRemote);
+        Assert.True(context.HasValue);
+        var restored = context.GetValueOrDefault();
+        Assert.Equal(activity.TraceId, restored.TraceId);
+        Assert.Equal(activity.SpanId, restored.SpanId);
+        Assert.Equal("docurag=1", restored.TraceState);
+        Assert.True(restored.IsRemote);
         Assert.Equal("evt-1", message.MessageId);
         Assert.Equal("doc", message.CorrelationId);
     }

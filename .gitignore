@@ -486,3 +486,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Corpus PDF (sources listées dans corpus/README.md)
+corpus/**/*.pdf
+TestResults/

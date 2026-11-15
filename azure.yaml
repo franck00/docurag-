@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: docurag
+metadata:
+  template: docurag@1.0.0
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  ingestion:
+    project: ./src/DocuRag.Ingestion
+    language: dotnet
+    host: function
+
+  worker:
+    project: ./src/DocuRag.Worker
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ../..
+      # Build dans Azure Container Registry (ACR Tasks, équivalent de `az acr build`) : pas de Docker local requis.
+      remoteBuild: true
+
+  api:
+    project: ./src/DocuRag.Api
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: ../..
+      remoteBuild: true
+
+hooks:
+  # L'abonnement Event Grid (BlobCreated *.pdf → Function) ne peut être créé qu'une fois la Function déployée.
+  postdeploy:
+    posix:
+      shell: sh
+      run: ./scripts/create-event-subscription.sh
+      continueOnError: false
+    windows:
+      shell: pwsh
+      run: ./scripts/create-event-subscription.ps1
+      continueOnError: false
