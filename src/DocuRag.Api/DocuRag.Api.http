@@ -1,6 +1,11 @@
 @DocuRag.Api_HostAddress = http://localhost:5064
 
-GET {{DocuRag.Api_HostAddress}}/weatherforecast/
+GET {{DocuRag.Api_HostAddress}}/health
+Accept: application/json
+
+###
+
+GET {{DocuRag.Api_HostAddress}}/dead-letters?max=20
 Accept: application/json
 
 ###

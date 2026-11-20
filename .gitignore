@@ -486,3 +486,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Corpus PDF (publics mais non versionnés)
+corpus/**/*.pdf
