@@ -520,6 +520,9 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
           }
           env: concat(sharedEnv, [
             { name: 'ASPNETCORE_URLS', value: 'http://+:8080' }
+            // Lecture de la DLQ par /dead-letters (rôle Data Receiver de l'identité partagée).
+            { name: 'ServiceBus__Namespace', value: '${serviceBus.name}.servicebus.windows.net' }
+            { name: 'ServiceBus__Queue', value: 'doc-processing' }
           ])
         }
       ]

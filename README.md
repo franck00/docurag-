@@ -54,7 +54,7 @@ docurag/
 │  ├─ DocuRag.Infrastructure/  # implémentations Azure partagées (Cosmos, OpenAI, Service Bus…)
 │  ├─ DocuRag.Ingestion/       # Azure Function (trigger Event Grid)
 │  ├─ DocuRag.Worker/          # worker conteneurisé (Service Bus + change feed)
-│  └─ DocuRag.Api/             # API minimale /ask, /documents
+│  └─ DocuRag.Api/             # API minimale /ask, /documents, /dead-letters
 ├─ tests/DocuRag.Core.Tests/   # tests xUnit (chunking, identité)
 ├─ infra/                      # Bicep (main.bicep + resources.bicep)
 ├─ scripts/                    # upload du corpus, test de charge
@@ -96,6 +96,9 @@ Interroger l'API une fois déployée :
 curl -X POST "$(azd env get-value SERVICE_API_ENDPOINT)/ask" \
   -H "Content-Type: application/json" \
   -d '{"question":"Quels sont les droits de douane applicables ?","topK":5}'
+
+# Messages en dead-letter et leur motif (lecture seule, max 1–100, défaut 20)
+curl "$(azd env get-value SERVICE_API_ENDPOINT)/dead-letters?max=20"
 ```
 
 > État : l'infrastructure Bicep **compile** (`bicep build`, 0 avertissement) mais n'a pas

@@ -63,6 +63,28 @@ public static class InfrastructureServiceCollectionExtensions
     public static IServiceCollection AddServiceBusQueue(
         this IServiceCollection services, IConfiguration configuration)
     {
+        services.TryAddServiceBusClient(configuration);
+        services.AddSingleton<IDocumentQueue, ServiceBusDocumentQueue>();
+        return services;
+    }
+
+    /// <summary>Lecture seule de la dead-letter queue (endpoint <c>/dead-letters</c>, J10).</summary>
+    public static IServiceCollection AddDeadLetterInspection(
+        this IServiceCollection services, IConfiguration configuration)
+    {
+        services.TryAddServiceBusClient(configuration);
+        services.AddSingleton<IDeadLetterInspector, ServiceBusDeadLetterInspector>();
+        return services;
+    }
+
+    private static void TryAddServiceBusClient(
+        this IServiceCollection services, IConfiguration configuration)
+    {
+        if (services.Any(d => d.ServiceType == typeof(ServiceBusClient)))
+        {
+            return;
+        }
+
         services.TryAddCredential();
         services.AddOptions<ServiceBusOptions>()
             .Bind(configuration.GetSection(ServiceBusOptions.SectionName))
@@ -74,9 +96,6 @@ public static class InfrastructureServiceCollectionExtensions
             var credential = sp.GetRequiredService<TokenCredential>();
             return new ServiceBusClient(options.Namespace, credential);
         });
-
-        services.AddSingleton<IDocumentQueue, ServiceBusDocumentQueue>();
-        return services;
     }
 
     public static IServiceCollection AddBlobStorage(

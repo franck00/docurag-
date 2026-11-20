@@ -51,3 +51,25 @@ installé localement (l'environnement n'avait que 8.0) pour builder et tester.
 **Choix notables** : 5ᵉ projet `Infrastructure` pour mutualiser les implémentations Azure ;
 OpenTelemetry remonté en 1.15.x (les 1.10 avaient des vulnérabilités bloquées par
 warnings-as-errors) ; check Newtonsoft de Cosmos désactivé (sérialisation System.Text.Json).
+
+## Amélioration quotidienne — 2026-11-20
+
+**Endpoint `GET /dead-letters` (J10 — gestion de la DLQ).** Le plan demandait « un endpoint
+ou une commande qui liste les messages en DLQ avec la raison » ; seul le dead-lettering
+existait côté worker.
+
+- `IDeadLetterInspector` (Core) + `ServiceBusDeadLetterInspector` (Infrastructure) : lecture
+  de la sous-queue `$DeadLetterQueue` en *peek* (rien n'est consommé ni verrouillé), borne
+  à 100 messages par appel. Le corps illisible (cas `DeserializationError`) est toléré : le
+  motif reste restitué.
+- API : `GET /dead-letters?max=N` (défaut 20, 400 hors 1–100). DI : `AddDeadLetterInspection`,
+  enregistrement du `ServiceBusClient` mutualisé avec `AddServiceBusQueue`.
+- Bicep : variables `ServiceBus__*` ajoutées à l'API (le rôle Data Receiver de l'identité
+  partagée couvre déjà le peek). `bicep build` OK.
+- 2 tests unitaires sur la conversion message → entrée (corps lisible / illisible).
+- `DocuRag.Api.http` : remplace l'exemple `weatherforecast` du template.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` / `dotnet test`, en particulier la signature de
+`ServiceBusModelFactory.ServiceBusReceivedMessage` (paramètres nommés) en 7.18.2, puis un
+appel réel à `/dead-letters` une fois la stack déployée.

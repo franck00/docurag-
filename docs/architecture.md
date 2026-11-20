@@ -52,6 +52,8 @@ les mêmes chunks au lieu d'en créer des doublons.
   automatique par le broker.
 - Appels Azure OpenAI : retry exponentiel sur 429 (politique du client).
 - Un PDF corrompu finit en DLQ avec un motif lisible, sans faire tomber le worker.
+- `GET /dead-letters?max=N` (API) liste la DLQ en *peek* : identifiant du document,
+  motif (`DeadLetterReason`), description, nombre de livraisons. Aucun message n'est consommé.
 
 ## Stockage Cosmos
 
