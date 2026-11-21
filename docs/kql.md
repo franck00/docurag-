@@ -52,3 +52,21 @@ union requests, dependencies, traces
 | project timestamp, itemType, name, message, duration, success
 | order by timestamp asc
 ```
+
+## 6. Métriques custom du worker (documents, chunks, latence d'embedding)
+
+Émises par `DocumentProcessingMetrics` (meter `DocuRag.Worker`).
+
+```kql
+customMetrics
+| where timestamp > ago(24h)
+| where name in ("docurag.documents.processed", "docurag.chunks.generated", "docurag.embedding.duration")
+| extend outcome = tostring(customDimensions["outcome"]),
+         documentType = tostring(customDimensions["document.type"])
+| summarize total = sum(valueSum), mesures = sum(valueCount),
+            moyenne = sum(valueSum) / sum(valueCount)
+    by name, outcome, documentType, bin(timestamp, 1h)
+| order by timestamp desc
+```
+
+`moyenne` n'a de sens que pour `docurag.embedding.duration` (latence moyenne d'un lot, en ms).

@@ -84,6 +84,10 @@ public sealed class DocumentProcessor
             await _store.UpsertDocumentAsync(record, cancellationToken);
 
             activity?.SetTag("document.chunks", documentChunks.Count);
+            DocumentProcessingMetrics.ChunksGenerated.Add(
+                documentChunks.Count,
+                new KeyValuePair<string, object?>(DocumentProcessingMetrics.DocumentTypeTag, message.DocumentType));
+            RecordProcessed(message, "indexed");
             _logger.LogInformation(
                 "Document {DocumentId} indexé : {Pages} pages, {Chunks} chunks.",
                 message.DocumentId, pages.Count, documentChunks.Count);
@@ -91,6 +95,7 @@ public sealed class DocumentProcessor
         catch (Exception ex)
         {
             activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            RecordProcessed(message, "failed");
             record.Status = DocumentStatus.Failed;
             record.Error = ex.Message;
             await SafeMarkFailedAsync(record, cancellationToken);
@@ -109,7 +114,12 @@ public sealed class DocumentProcessor
         {
             var batch = chunks.Skip(start).Take(EmbeddingBatchSize).ToList();
             var inputs = batch.Select(c => c.Content).ToList();
+
+            var startedAt = Stopwatch.GetTimestamp();
             var vectors = await _embeddings.EmbedBatchAsync(inputs, cancellationToken);
+            DocumentProcessingMetrics.EmbeddingDuration.Record(
+                Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds,
+                new KeyValuePair<string, object?>(DocumentProcessingMetrics.DocumentTypeTag, message.DocumentType));
 
             for (var i = 0; i < batch.Count; i++)
             {
@@ -130,6 +140,12 @@ public sealed class DocumentProcessor
 
         return result;
     }
+
+    private static void RecordProcessed(DocumentMessage message, string outcome) =>
+        DocumentProcessingMetrics.DocumentsProcessed.Add(
+            1,
+            new KeyValuePair<string, object?>(DocumentProcessingMetrics.OutcomeTag, outcome),
+            new KeyValuePair<string, object?>(DocumentProcessingMetrics.DocumentTypeTag, message.DocumentType));
 
     private async Task SafeMarkFailedAsync(DocumentRecord record, CancellationToken cancellationToken)
     {

@@ -73,3 +73,23 @@ existait côté worker.
 À vérifier : `dotnet build` / `dotnet test`, en particulier la signature de
 `ServiceBusModelFactory.ServiceBusReceivedMessage` (paramètres nommés) en 7.18.2, puis un
 appel réel à `/dead-letters` une fois la stack déployée.
+
+## Amélioration quotidienne — 2026-11-21
+
+**Métriques custom du worker (J12).** Le plan demandait « documents traités, chunks générés,
+latence d'embedding » ; le meter `DocuRag.Worker` était bien abonné par OpenTelemetry mais
+aucun instrument n'était créé, donc rien n'arrivait dans `customMetrics`.
+
+- `DocumentProcessingMetrics` (Infrastructure/Processing) : compteurs
+  `docurag.documents.processed` (tags `outcome` = `indexed`/`failed`, `document.type`),
+  `docurag.chunks.generated`, histogramme `docurag.embedding.duration` (ms, un point par lot
+  de 16, retries du client inclus).
+- `DocumentProcessor` alimente ces instruments (succès, échec, chaque appel d'embedding).
+- 2 tests unitaires via `MeterListener` (cas indexé / cas en échec), isolés par un
+  `document.type` propre à chaque test puisque le meter est statique.
+- `docs/kql.md` : requête n°6 sur ces métriques.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors) / `dotnet test`, puis la présence des
+métriques dans Application Insights (`customMetrics`) une fois la stack déployée — le nom
+exact des `customDimensions` côté exporteur Azure Monitor reste à confirmer.
