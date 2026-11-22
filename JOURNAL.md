@@ -93,3 +93,24 @@ aucun instrument n'était créé, donc rien n'arrivait dans `customMetrics`.
 À vérifier : `dotnet build` (warnings-as-errors) / `dotnet test`, puis la présence des
 métriques dans Application Insights (`customMetrics`) une fois la stack déployée — le nom
 exact des `customDimensions` côté exporteur Azure Monitor reste à confirmer.
+
+## Amélioration quotidienne — 2026-11-22
+
+**Validation des entrées de `POST /ask` (robustesse / coûts).** L'API ne vérifiait que la
+présence de la question : une question de plusieurs dizaines de milliers de caractères ou un
+`topK` à 10 000 partaient tels quels vers l'embedding, Cosmos et `gpt-4o-mini` (tokens
+facturés, prompt démesuré).
+
+- `AskRequestValidator` (Core/Models) : question requise et ≤ 2000 caractères, `topK` entre
+  1 et 20 (0 reste accepté = défaut 5 appliqué par `RagService`), `documentType` ≤ 64
+  caractères. Pas de restriction de jeu de caractères sur le type : il suit le nom du dossier
+  blob (accents possibles) et le filtre Cosmos est déjà paramétré.
+- API : `/ask` renvoie 400 avec `error` (première erreur, compatible avec l'existant) et
+  `errors` (liste complète), avant tout appel payant.
+- 9 tests unitaires (xUnit, dont théories) dans `DocuRag.Core.Tests`.
+- README : contraintes documentées sous l'exemple `curl`.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors, analyzers xUnit) / `dotnet test`. Point
+ouvert non traité : le filtre `documentType` est sensible à la casse alors que les types
+sont stockés en minuscules — une normalisation côté API pourrait être utile.

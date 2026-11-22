@@ -73,9 +73,11 @@ app.MapGet("/dead-letters", async (IDeadLetterInspector inspector, int? max, Can
 // Question → réponse sourcée.
 app.MapPost("/ask", async (AskRequest request, RagService rag, CancellationToken ct) =>
 {
-    if (string.IsNullOrWhiteSpace(request.Question))
+    // Validation avant tout appel payant (embedding, Cosmos, gpt-4o-mini).
+    var errors = AskRequestValidator.Validate(request);
+    if (errors.Count > 0)
     {
-        return Results.BadRequest(new { error = "Le champ 'question' est requis." });
+        return Results.BadRequest(new { error = errors[0], errors });
     }
 
     var response = await rag.AskAsync(request, ct);

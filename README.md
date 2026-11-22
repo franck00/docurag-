@@ -96,6 +96,8 @@ Interroger l'API une fois déployée :
 curl -X POST "$(azd env get-value SERVICE_API_ENDPOINT)/ask" \
   -H "Content-Type: application/json" \
   -d '{"question":"Quels sont les droits de douane applicables ?","topK":5}'
+# Contraintes : question ≤ 2000 caractères, topK 1–20 (0 ou absent = 5),
+# documentType ≤ 64 caractères ; sinon 400 avec la liste des erreurs.
 
 # Messages en dead-letter et leur motif (lecture seule, max 1–100, défaut 20)
 curl "$(azd env get-value SERVICE_API_ENDPOINT)/dead-letters?max=20"
