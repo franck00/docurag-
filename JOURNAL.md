@@ -114,3 +114,23 @@ facturés, prompt démesuré).
 À vérifier : `dotnet build` (warnings-as-errors, analyzers xUnit) / `dotnet test`. Point
 ouvert non traité : le filtre `documentType` est sensible à la casse alors que les types
 sont stockés en minuscules — une normalisation côté API pourrait être utile.
+
+## Amélioration quotidienne — 2026-11-23
+
+**Filtre `documentType` de `/ask` insensible à la casse (robustesse).** Point ouvert la veille :
+les types sont stockés en minuscules (`DocumentIdentity.ToDocumentType`) mais le filtre Cosmos
+`c.documentType = @type` compare à l'identique — `"documentType":"OHADA"` renvoyait donc
+« aucun extrait » sans erreur, ce qui ressemble à un trou du corpus plutôt qu'à une faute de
+saisie.
+
+- `DocumentIdentity.NormalizeDocumentTypeFilter` (Core) : `Trim` + `ToLowerInvariant`, blanc →
+  `null` (pas de filtre), placé à côté de `ToDocumentType` pour garder une seule convention.
+- `RagService` normalise le filtre avant `SearchAsync` ; aucune modification de la requête
+  Cosmos (pas de `LOWER()` côté serveur, qui empêcherait d'utiliser l'index).
+- Tests : 2 cas dans `DocumentIdentityTests` (dont l'aller-retour avec `ToDocumentType`) et une
+  théorie dans `RagServiceTests` (le faux store retient désormais le filtre reçu).
+- README : comportement documenté sous l'exemple `curl`.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors, analyzers xUnit sur les `InlineData(null)`) /
+`dotnet test`. Les documents déjà indexés ne sont pas concernés (types déjà en minuscules).

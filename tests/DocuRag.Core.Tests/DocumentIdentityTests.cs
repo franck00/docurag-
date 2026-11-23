@@ -41,6 +41,24 @@ public class DocumentIdentityTests
     }
 
     [Theory]
+    [InlineData("OHADA", "ohada")]
+    [InlineData(" Dgi ", "dgi")]
+    [InlineData("", null)]
+    [InlineData("  ", null)]
+    [InlineData(null, null)]
+    public void NormalizeDocumentTypeFilter_MatchesStoredFormat(string? input, string? expected)
+    {
+        Assert.Equal(expected, DocumentIdentity.NormalizeDocumentTypeFilter(input));
+    }
+
+    [Fact]
+    public void NormalizeDocumentTypeFilter_RoundTripsWithToDocumentType()
+    {
+        var stored = DocumentIdentity.ToDocumentType("Douanes-CEMAC/code.pdf");
+        Assert.Equal(stored, DocumentIdentity.NormalizeDocumentTypeFilter("DOUANES-cemac"));
+    }
+
+    [Theory]
     [InlineData("ohada/sous/acte.pdf", "acte.pdf")]
     [InlineData("racine.pdf", "racine.pdf")]
     public void ToFileName_UsesLastSegment(string path, string expected)

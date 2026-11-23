@@ -64,6 +64,9 @@ internal sealed class InMemoryVectorStore : IVectorStore
     public ConcurrentDictionary<string, DocumentChunk> Chunks { get; } = new();
     public IReadOnlyList<VectorSearchResult> NextSearchResults { get; set; } = [];
 
+    /// <summary>Filtre <c>documentType</c> reçu lors du dernier <see cref="SearchAsync"/>.</summary>
+    public string? LastSearchDocumentType { get; private set; }
+
     public Task UpsertDocumentAsync(DocumentRecord document, CancellationToken cancellationToken = default)
     {
         Documents[document.Id] = document;
@@ -87,7 +90,10 @@ internal sealed class InMemoryVectorStore : IVectorStore
 
     public Task<IReadOnlyList<VectorSearchResult>> SearchAsync(
         float[] queryVector, int topK, string? documentType = null, CancellationToken cancellationToken = default)
-        => Task.FromResult(NextSearchResults);
+    {
+        LastSearchDocumentType = documentType;
+        return Task.FromResult(NextSearchResults);
+    }
 }
 
 /// <summary>Chat factice : renvoie une réponse canned et retient le prompt reçu.</summary>

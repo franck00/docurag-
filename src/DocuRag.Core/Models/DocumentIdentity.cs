@@ -40,6 +40,17 @@ public static class DocumentIdentity
         return slash > 0 ? normalized[..slash].ToLowerInvariant() : "unknown";
     }
 
+    /// <summary>
+    /// Normalise un filtre <c>documentType</c> reçu de l'API pour qu'il corresponde à la
+    /// valeur stockée par <see cref="ToDocumentType"/> (minuscules, sans espaces autour) :
+    /// « OHADA » ou « Ohada » doivent filtrer comme « ohada ». Vide ou blanc → <c>null</c>
+    /// (pas de filtre).
+    /// </summary>
+    public static string? NormalizeDocumentTypeFilter(string? documentType)
+        => string.IsNullOrWhiteSpace(documentType)
+            ? null
+            : documentType.Trim().ToLowerInvariant();
+
     /// <summary>Nom de fichier seul (dernier segment du chemin).</summary>
     public static string ToFileName(string blobPath)
     {

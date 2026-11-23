@@ -97,6 +97,24 @@ public class RagServiceTests
         Assert.True(response.Sources[0].Excerpt.Length < longText.Length);
     }
 
+    [Theory]
+    [InlineData("OHADA", "ohada")]
+    [InlineData("  Douanes-CEMAC ", "douanes-cemac")]
+    [InlineData("   ", null)]
+    [InlineData(null, null)]
+    public async Task AskAsync_NormalizesDocumentTypeFilter(string? requested, string? expected)
+    {
+        var store = new InMemoryVectorStore { NextSearchResults = [] };
+        var rag = new RagService(
+            new FakeEmbeddingGenerator(), store, new FakeChat(), NullLogger<RagService>.Instance);
+
+        await rag.AskAsync(
+            new AskRequest { Question = "Question ?", DocumentType = requested },
+            CancellationToken.None);
+
+        Assert.Equal(expected, store.LastSearchDocumentType);
+    }
+
     [Fact]
     public async Task AskAsync_BlankQuestion_Throws()
     {

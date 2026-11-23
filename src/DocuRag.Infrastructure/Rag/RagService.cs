@@ -50,8 +50,10 @@ public sealed class RagService
         var topK = request.TopK <= 0 ? 5 : request.TopK;
 
         var queryVector = await _embeddings.EmbedAsync(request.Question, cancellationToken);
+        // Les types sont stockés en minuscules et le filtre Cosmos est sensible à la casse.
+        var documentType = DocumentIdentity.NormalizeDocumentTypeFilter(request.DocumentType);
         var hits = await _store.SearchAsync(
-            queryVector, topK, request.DocumentType, cancellationToken);
+            queryVector, topK, documentType, cancellationToken);
 
         activity?.SetTag("ask.hits", hits.Count);
 
