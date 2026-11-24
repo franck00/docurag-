@@ -99,6 +99,9 @@ curl -X POST "$(azd env get-value SERVICE_API_ENDPOINT)/ask" \
 # Contraintes : question ≤ 2000 caractères, topK 1–20 (0 ou absent = 5),
 # documentType ≤ 64 caractères ; sinon 400 avec la liste des erreurs.
 # documentType est insensible à la casse (« OHADA » filtre comme « ohada »).
+# Cache sémantique (J13, opt-in : SemanticCache__Enabled=true) : une question à
+# similarité cosinus ≥ 0,95 d'une question déjà posée (même documentType et topK)
+# est servie sans Cosmos ni LLM. Cache en mémoire par réplica, TTL 30 min.
 
 # Messages en dead-letter et leur motif (lecture seule, max 1–100, défaut 20)
 curl "$(azd env get-value SERVICE_API_ENDPOINT)/dead-letters?max=20"

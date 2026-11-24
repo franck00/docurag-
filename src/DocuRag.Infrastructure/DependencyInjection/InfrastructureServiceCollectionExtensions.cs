@@ -166,6 +166,14 @@ public static class InfrastructureServiceCollectionExtensions
     {
         services.AddCosmosVectorStore(configuration);
         services.AddAzureOpenAI(configuration);
+
+        // Cache sémantique (J13) : toujours enregistré, inactif tant que
+        // SemanticCache:Enabled n'est pas à true (flag pilotable depuis App Configuration).
+        services.AddOptions<SemanticCacheOptions>()
+            .Bind(configuration.GetSection(SemanticCacheOptions.SectionName))
+            .ValidateDataAnnotations();
+        services.AddSingleton<ISemanticCache, InMemorySemanticCache>();
+
         services.AddSingleton<RagService>();
         return services;
     }

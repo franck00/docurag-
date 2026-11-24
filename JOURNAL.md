@@ -134,3 +134,31 @@ saisie.
 **Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
 À vérifier : `dotnet build` (warnings-as-errors, analyzers xUnit sur les `InlineData(null)`) /
 `dotnet test`. Les documents déjà indexés ne sont pas concernés (types déjà en minuscules).
+
+## Amélioration quotidienne — 2026-11-24
+
+**Cache sémantique de `/ask` (J13, première étape).** Seul le change feed de J13 était fait ;
+le cache sémantique (« seuil 0,95, gérer l'expiration et l'invalidation ») manquait. Plutôt
+que d'ajouter Redis d'un coup (ressource Bicep, package, RBAC — invérifiable ici), le cache
+passe par un contrat pour pouvoir brancher Redis ensuite sans toucher à `RagService`.
+
+- `ISemanticCache` (Core/Contracts) : `TryGetAsync` / `SetAsync` sur le vecteur de la question,
+  avec `documentType` (normalisé) et `topK` dans la clé.
+- `InMemorySemanticCache` (Infrastructure/Rag) : recherche cosinus linéaire, seuil 0,95, TTL
+  30 min (invalidation par expiration), 500 entrées max (éviction des plus anciennes),
+  `TimeProvider` injectable. Sans dépendance NuGet nouvelle.
+- `RagService` : consulte le cache après l'embedding (l'embedding reste payé, mais Cosmos et
+  `gpt-4o-mini` sont évités), tag `ask.cache` = `hit`/`miss` sur l'activité. Les réponses
+  « aucun extrait » ne sont pas mises en cache (le corpus peut grandir).
+- Feature flag `SemanticCache:Enabled` (défaut `false`, section ajoutée à `appsettings.json`),
+  pilotable par variable d'environnement ou App Configuration comme prévu en J11.
+- 9 tests unitaires, 11 cas (`SemanticCacheTests`) : hit, seuil, périmètre, TTL, éviction, flag,
+  cosinus, et deux tests `RagService` (2ᵉ question identique sans appel LLM, pas de cache sans
+  extrait). README : comportement documenté sous l'exemple `curl`.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors ; type `Lock` de .NET 9+) / `dotnet test`, la
+résolution DI des paramètres optionnels (`ISemanticCache? cache = null`, `TimeProvider? time`),
+puis le temps de réponse de la 2ᵉ question une fois déployé. Reste à faire : variable
+`SemanticCache__Enabled` dans le Bicep de l'API, puis Redis (cache partagé entre réplicas et
+invalidation à la ré-indexation).
