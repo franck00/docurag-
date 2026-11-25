@@ -13,6 +13,9 @@ param environmentName string
 @description('ObjectId d\'un utilisateur à qui accorder les rôles data-plane pour tester en local. Vide = ignoré.')
 param principalId string = ''
 
+@description('Active le cache sémantique de /ask (J13) : alimente SemanticCache__Enabled de l\'API.')
+param semanticCacheEnabled bool = false
+
 // Jeton court et déterministe pour nommer les ressources de façon unique.
 var resourceToken = toLower(uniqueString(subscription().id, resourceGroup().id, environmentName))
 var prefix = 'dr'
@@ -523,6 +526,8 @@ resource apiApp 'Microsoft.App/containerApps@2024-03-01' = {
             // Lecture de la DLQ par /dead-letters (rôle Data Receiver de l'identité partagée).
             { name: 'ServiceBus__Namespace', value: '${serviceBus.name}.servicebus.windows.net' }
             { name: 'ServiceBus__Queue', value: 'doc-processing' }
+            // Feature flag du cache sémantique (J13). Cache en mémoire : propre à chaque réplica.
+            { name: 'SemanticCache__Enabled', value: semanticCacheEnabled ? 'true' : 'false' }
           ])
         }
       ]

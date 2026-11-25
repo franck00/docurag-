@@ -162,3 +162,25 @@ résolution DI des paramètres optionnels (`ISemanticCache? cache = null`, `Time
 puis le temps de réponse de la 2ᵉ question une fois déployé. Reste à faire : variable
 `SemanticCache__Enabled` dans le Bicep de l'API, puis Redis (cache partagé entre réplicas et
 invalidation à la ré-indexation).
+
+## Amélioration quotidienne — 2026-11-25
+
+**Feature flag du cache sémantique câblé dans le Bicep (J11/J13).** Reste à faire de la veille :
+le cache existait côté code (`SemanticCache:Enabled`, défaut `false`) mais rien dans l'infra ne
+permettait de l'activer sur l'API déployée sans modifier le portail à la main (et perdre le
+réglage au prochain `azd provision`).
+
+- `infra/main.bicep` / `resources.bicep` : paramètre `semanticCacheEnabled` (bool, défaut
+  `false`) transmis au module et converti en variable `SemanticCache__Enabled` (`true`/`false`)
+  sur le Container App de l'API uniquement (le worker n'utilise pas le cache).
+- `infra/main.parameters.json` : alimenté par la variable azd `SEMANTIC_CACHE_ENABLED`
+  (défaut `false`) → activation par `azd env set SEMANTIC_CACHE_ENABLED true && azd provision`.
+- README : commande d'activation ajoutée sous l'exemple `curl`.
+- `bicep build infra/main.bicep` OK (CLI 0.49.2, aucun avertissement).
+
+**Non vérifié** : pas de déploiement depuis cet environnement. À vérifier : que `azd provision`
+convertit bien la valeur substituée `"false"`/`"true"` en booléen pour le paramètre (pattern
+courant des templates azd), puis la présence de `SemanticCache__Enabled` dans la révision de
+l'API. Toujours pas de SDK .NET ici : build/tests des jours précédents restent à lancer.
+Reste à faire : Redis pour un cache partagé entre réplicas (l'API peut monter à 5 réplicas,
+chacun a aujourd'hui son propre cache).

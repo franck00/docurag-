@@ -14,6 +14,9 @@ param location string
 @description('Principal (objectId) à qui accorder les rôles data-plane pour tester en local. Vide = ignoré.')
 param principalId string = ''
 
+@description('Active le cache sémantique de /ask (J13) sur l\'API. `azd env set SEMANTIC_CACHE_ENABLED true` puis `azd provision`.')
+param semanticCacheEnabled bool = false
+
 var tags = {
   'azd-env-name': environmentName
 }
@@ -32,6 +35,7 @@ module resources 'resources.bicep' = {
     tags: tags
     environmentName: environmentName
     principalId: principalId
+    semanticCacheEnabled: semanticCacheEnabled
   }
 }
 
