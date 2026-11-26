@@ -184,3 +184,26 @@ courant des templates azd), puis la présence de `SemanticCache__Enabled` dans l
 l'API. Toujours pas de SDK .NET ici : build/tests des jours précédents restent à lancer.
 Reste à faire : Redis pour un cache partagé entre réplicas (l'API peut monter à 5 réplicas,
 chacun a aujourd'hui son propre cache).
+
+## Amélioration quotidienne — 2026-11-26
+
+**Propagation de trace Service Bus factorisée et testée (J12).** L'injection du `traceparent`
+(`ServiceBusDocumentQueue`) et sa relecture (`Worker`) étaient écrites en double, avec les clés
+en dur des deux côtés et sans aucun test : une divergence de clé ou de format aurait cassé la
+trace distribuée Function → worker sans erreur visible (le worker démarre alors simplement une
+nouvelle trace racine).
+
+- `TraceContextPropagation` (Infrastructure/Messaging) : `Inject(Activity?, IDictionary)` et
+  `Extract(IReadOnlyDictionary)` → `ActivityContext`, clés `traceparent`/`tracestate` partagées.
+- `Extract` marque désormais le parent comme distant (`isRemote: true`), ce qui correspond à la
+  réalité (contexte venu d'un autre processus) ; contexte invalide ou absent → trace racine,
+  comme avant.
+- `Inject` ignore une activité au format d'ID hiérarchique (non W3C), qui de toute façon
+  n'était pas relisible côté worker.
+- `ServiceBusDocumentQueue` et `Worker` utilisent le helper (comportement inchangé sinon).
+- 7 cas de tests (`TraceContextPropagationTests`) : aller-retour trace/span/tracestate, absence
+  de tracestate, pas d'activité, ID hiérarchique, traceparent invalide, propriété non-chaîne.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors) / `dotnet test`, puis dans Application Insights
+qu'une ingestion apparaît bien comme une seule trace (Function → `ProcessMessage` du worker).

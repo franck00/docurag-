@@ -35,16 +35,7 @@ public sealed class ServiceBusDocumentQueue : IDocumentQueue, IAsyncDisposable
             MessageId = message.DocumentId, // dédoublonnage naturel côté broker
         };
 
-        var traceparent = Activity.Current?.Id;
-        if (!string.IsNullOrEmpty(traceparent))
-        {
-            sbMessage.ApplicationProperties["traceparent"] = traceparent;
-            var state = Activity.Current?.TraceStateString;
-            if (!string.IsNullOrEmpty(state))
-            {
-                sbMessage.ApplicationProperties["tracestate"] = state;
-            }
-        }
+        TraceContextPropagation.Inject(Activity.Current, sbMessage.ApplicationProperties);
 
         await _sender.SendMessageAsync(sbMessage, cancellationToken);
     }

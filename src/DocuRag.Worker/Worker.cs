@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using DocuRag.Core.Messaging;
+using DocuRag.Infrastructure.Messaging;
 using DocuRag.Infrastructure.Options;
 using DocuRag.Infrastructure.Processing;
 using Microsoft.Extensions.Options;
@@ -119,16 +120,7 @@ public sealed class Worker : BackgroundService
     /// <summary>Reprend le contexte de trace injecté à l'émission (J12), sinon démarre une racine.</summary>
     private static Activity? StartLinkedActivity(ServiceBusReceivedMessage message)
     {
-        ActivityContext parent = default;
-        if (message.ApplicationProperties.TryGetValue("traceparent", out var tp)
-            && tp is string traceparent)
-        {
-            var state = message.ApplicationProperties.TryGetValue("tracestate", out var ts)
-                ? ts as string
-                : null;
-            ActivityContext.TryParse(traceparent, state, out parent);
-        }
-
+        var parent = TraceContextPropagation.Extract(message.ApplicationProperties);
         return ActivitySource.StartActivity(
             "ProcessMessage", ActivityKind.Consumer, parent);
     }
