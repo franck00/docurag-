@@ -44,7 +44,15 @@ public sealed class IngestBlobFunction
             return;
         }
 
-        var blobPath = BlobPathFromUrl(blobUrl);
+        var blobPath = DocumentIdentity.ToBlobPath(blobUrl);
+        if (blobPath is null)
+        {
+            // URL malformée : la relancer ne changerait rien, on l'ignore plutôt que de
+            // laisser l'exception déclencher les retries Event Grid.
+            _logger.LogWarning("URL de blob invalide, événement ignoré : {Blob}", blobUrl);
+            return;
+        }
+
         var documentId = DocumentIdentity.ToDocumentId(blobPath);
         var documentType = DocumentIdentity.ToDocumentType(blobPath);
         var fileName = DocumentIdentity.ToFileName(blobPath);
@@ -86,14 +94,5 @@ public sealed class IngestBlobFunction
         return doc.RootElement.TryGetProperty("url", out var url)
             ? url.GetString()
             : null;
-    }
-
-    /// <summary>Chemin relatif du blob dans son conteneur (<c>{container}/{path}</c> → <c>{path}</c>).</summary>
-    private static string BlobPathFromUrl(string blobUrl)
-    {
-        var uri = new Uri(blobUrl);
-        var path = uri.AbsolutePath.TrimStart('/');
-        var slash = path.IndexOf('/');
-        return slash >= 0 ? path[(slash + 1)..] : path;
     }
 }

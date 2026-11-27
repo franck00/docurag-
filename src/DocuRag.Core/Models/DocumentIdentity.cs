@@ -51,6 +51,32 @@ public static class DocumentIdentity
             ? null
             : documentType.Trim().ToLowerInvariant();
 
+    /// <summary>
+    /// Chemin du blob dans son conteneur à partir de son URL complète
+    /// (<c>https://{compte}.blob.core.windows.net/{conteneur}/{chemin}</c> → <c>{chemin}</c>),
+    /// décodé (<c>%20</c> → espace, <c>%C3%A9</c> → <c>é</c>) pour que l'identité, le type et le
+    /// nom de fichier stockés correspondent au nom réel du blob — comme le fait déjà le
+    /// téléchargeur côté worker. Renvoie <c>null</c> si l'URL n'est pas une URL absolue
+    /// exploitable ou ne désigne pas un blob (conteneur seul).
+    /// </summary>
+    public static string? ToBlobPath(string? blobUrl)
+    {
+        if (string.IsNullOrWhiteSpace(blobUrl)
+            || !Uri.TryCreate(blobUrl.Trim(), UriKind.Absolute, out var uri))
+        {
+            return null;
+        }
+
+        var path = uri.AbsolutePath.TrimStart('/');
+        var slash = path.IndexOf('/');
+        if (slash < 0 || slash == path.Length - 1)
+        {
+            return null;
+        }
+
+        return Uri.UnescapeDataString(path[(slash + 1)..]);
+    }
+
     /// <summary>Nom de fichier seul (dernier segment du chemin).</summary>
     public static string ToFileName(string blobPath)
     {

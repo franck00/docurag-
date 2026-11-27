@@ -207,3 +207,26 @@ nouvelle trace racine).
 **Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
 À vérifier : `dotnet build` (warnings-as-errors) / `dotnet test`, puis dans Application Insights
 qu'une ingestion apparaît bien comme une seule trace (Function → `ProcessMessage` du worker).
+
+## Amélioration quotidienne — 2026-11-27
+
+**Décodage de l'URL du blob à l'ingestion (robustesse).** La Function `IngestBlob` dérivait le
+chemin du blob de `Uri.AbsolutePath`, qui reste encodé : un PDF `ohada/Acte Uniforme.pdf`
+était enregistré avec le nom `Acte%20Uniforme.pdf` (citations de `/ask` illisibles, accents en
+`%C3%A9`), alors que le téléchargeur du worker décode déjà le nom. Une URL malformée levait en
+plus une `UriFormatException`, relancée inutilement par Event Grid.
+
+- `DocumentIdentity.ToBlobPath(blobUrl)` (Core) : retire le conteneur, décode le chemin
+  (`Uri.UnescapeDataString`), renvoie `null` pour une URL non absolue ou sans chemin de blob.
+  Placé avec les autres dérivations d'identité pour garder une seule convention.
+- `IngestBlobFunction` utilise le helper (méthode privée `BlobPathFromUrl` supprimée) et ignore
+  avec un avertissement une URL invalide au lieu de lever.
+- Tests (`DocumentIdentityTests`) : 2 théories (11 cas : conteneur retiré, sous-dossiers, `%20`,
+  accents encodés, URL relative / vide / conteneur seul) et un test d'identité identique entre
+  nom encodé et nom réel.
+
+**Non vérifié** : pas de SDK .NET ni NuGet dans l'environnement — ni build ni tests lancés.
+À vérifier : `dotnet build` (warnings-as-errors) / `dotnet test`. Effet de bord : un document
+déjà indexé dont le nom contenait des caractères encodés changera d'`id` à sa prochaine
+ingestion (l'ancien enregistrement resterait dans Cosmos) — aucun des 4 PDF actuels du corpus
+n'est concerné (noms sans espaces ni accents).

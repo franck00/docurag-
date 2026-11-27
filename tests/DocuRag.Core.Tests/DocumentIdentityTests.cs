@@ -65,4 +65,37 @@ public class DocumentIdentityTests
     {
         Assert.Equal(expected, DocumentIdentity.ToFileName(path));
     }
+
+    [Theory]
+    [InlineData("https://st.blob.core.windows.net/documents/ohada/acte.pdf", "ohada/acte.pdf")]
+    [InlineData("https://st.blob.core.windows.net/documents/racine.pdf", "racine.pdf")]
+    [InlineData("https://st.blob.core.windows.net/documents/ohada/sous/acte.pdf", "ohada/sous/acte.pdf")]
+    [InlineData("https://st.blob.core.windows.net/documents/ohada/Acte%20Uniforme.pdf", "ohada/Acte Uniforme.pdf")]
+    [InlineData("https://st.blob.core.windows.net/documents/dgi/d%C3%A9cret.pdf", "dgi/décret.pdf")]
+    public void ToBlobPath_StripsContainerAndDecodes(string url, string expected)
+    {
+        Assert.Equal(expected, DocumentIdentity.ToBlobPath(url));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("pas une url")]
+    [InlineData("ohada/acte.pdf")]
+    [InlineData("https://st.blob.core.windows.net/documents")]
+    [InlineData("https://st.blob.core.windows.net/documents/")]
+    public void ToBlobPath_InvalidUrl_ReturnsNull(string? url)
+    {
+        Assert.Null(DocumentIdentity.ToBlobPath(url));
+    }
+
+    [Fact]
+    public void ToBlobPath_EncodedAndPlainNames_GiveSameIdentity()
+    {
+        var path = DocumentIdentity.ToBlobPath(
+            "https://st.blob.core.windows.net/documents/ohada/Acte%20Uniforme.pdf")!;
+
+        Assert.Equal(DocumentIdentity.ToDocumentId("ohada/Acte Uniforme.pdf"), DocumentIdentity.ToDocumentId(path));
+        Assert.Equal("Acte Uniforme.pdf", DocumentIdentity.ToFileName(path));
+    }
 }
