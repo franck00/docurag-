@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+name: docurag
+metadata:
+  template: docurag@1.0.0
+
+infra:
+  provider: bicep
+  path: infra
+
+services:
+  ingestion:
+    project: src/DocuRag.Ingestion
+    language: dotnet
+    host: function
+
+  worker:
+    project: src/DocuRag.Worker
+    language: dotnet
+    host: containerapp
+    docker:
+      path: Dockerfile
+      context: .
+
+  api:
+    project: src/DocuRag.Api
+    language: dotnet
+    host: containerapp
+    docker:
+      path: src/DocuRag.Api/Dockerfile
+      context: .
